@@ -5,23 +5,28 @@
 import { LitElement, html, css } from "lit";
 import { DDDSuper } from "@haxtheweb/d-d-d/d-d-d.js";
 import { I18NMixin } from "@haxtheweb/i18n-manager/lib/I18NMixin.js";
+import '@haxtheweb/rpg-character/rpg-character.js';
 
 /**
- * `project-zero`
+ * `github-rpg-contributors`
  * 
  * @demo index.html
- * @element project-zero
+ * @element github-rpg-contributors
  */
-export class ProjectZero extends DDDSuper(I18NMixin(LitElement)) 
+export class GitHubRPGContributors extends DDDSuper(I18NMixin(LitElement)) 
 {
 
   static get tag() {
-    return "project-zero";
+    return "github-rpg-contributors";
   }
 
   constructor() {
     super();
+    this.items = []
+    this.org=''
+    this.repo=''
     this.title = "";
+    this.limit = 25;
     this.t = this.t || {};
     this.t = {
       ...this.t,
@@ -30,7 +35,7 @@ export class ProjectZero extends DDDSuper(I18NMixin(LitElement))
     this.registerLocalization({
       context: this,
       localesPath:
-        new URL("./locales/project-zero.ar.json", import.meta.url).href +
+        new URL("./locales/github-rpg-contributors.ar.json", import.meta.url).href +
         "/../",
       locales: ["ar", "es", "hi", "zh"],
     });
@@ -41,10 +46,13 @@ export class ProjectZero extends DDDSuper(I18NMixin(LitElement))
     return {
       ...super.properties,
       title: { type: String },
+      items: {type: Array},
+      org: {type: String},
+      repo: {type: String},
+      limit: {type: Number}
     };
   }
 
-  // Lit scoped styles
   static get styles() {
     return [super.styles,
     css`
@@ -59,61 +67,91 @@ export class ProjectZero extends DDDSuper(I18NMixin(LitElement))
         padding: var(--ddd-spacing-4);
       }
       h3 span {
-        font-size: var(--project-zero-label-font-size, var(--ddd-font-size-s));
+        font-size: var(--github-rpg-contributors-label-font-size, var(--ddd-font-size-s));
       }
-    `];
-  }
-
-  async fetchContributors()
-  {
-    const url = 'https://api.github.com/repos/olivia-sarsfield/project-zero/contributors';
-    try
-    {
-      const response = await fetch(url);
-      if(!response.ok)
+      .rpg-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center; 
+      }
+      .characterthings
       {
-        throw new Error('Network response was not ok');
-      }
-      const data = await response.json();
-      this.contributors = data.slice(0, this.limit)
-
-    }
-    catch(error)
-    {
-      console.error('There was a problem with your fetch operation:', error);
-    }
+        padding: var(--ddd-spacing-2);
+        text-align: center;
+        min-width: 200px;
+            }
+          .contdetails
+          {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin-left: var(--ddd-spacing-2);
+          }
+          .header
+          {
+            text-align: center;
+            margin: 0 auto;
+          }
+          h3
+          {
+            display: inline-block;
+          }
+    `];
+   
   }
+updated(changedProperties)
+{
+  if(changedProperties.has('org') || changedProperties.has('repo'))
+  {
+    this.getData();
+  }
+}
+getData()
+{
+  const url = `https://api.github.com/repos/${this.org}/${this.repo}/contributors`;
+  try {
+    fetch(url)
+      .then(d => d.ok ? d.json() : {})
+      .then(data => {
+        if (data) {
+          this.items = [];
+          this.items = data;
+        }
+      });
+  } catch (error) {
+    console.error("Error fetching data:", error);
+  }
+}
+ 
 
   // Lit render the HTML
   render() 
   {
     return html`
-<div class="wrapper">
-  <h3><span>${this.t.title}:</span> ${this.title}</h3>
-  ${this.contributors.length > 0
-    ? html`
-        ${this.contributors.map(
-        (contributor) => html`
-         <div class="contributor">
-         <img src="${contributor.avatar_url}" alt="${contributor.login}" />
-         <div class="contributor-info">
-          <a
-           href="${contributor.html_url}"
-              target="_blank"
-              title="Visit ${contributor.login}'s GitHub"
-             class="contributor-name" >
-                  ${contributor.login}
-                </a>
-                <p>Contributions: ${contributor.contributions}</p>
-              </div>
-            </div>
-          `
-        )}
-      `
-    : html`<p>Loading contributors...</p>`}
-  <slot></slot>
-</div>
-    `;
+<div class="header">
+  <h3>GitHub Repo: <a href = "https://github.com/${this.org}/${this.repo}">${this.org}/${this.repo}</a> </h3>
+  a></a><span>${this.t.title}:</span> ${this.title}</h3>
+  </div>
+  <slot> </slot>
+  <div class = "rpg-wrapper">
+      ${this.items.filter((item, index) => index < this.limit).map((item) => 
+        html`
+
+        <div class="rpg-wrapper">
+        <div class="character-things">
+        <rpg-character  seed="${item.login}"></rpg-character>
+        <div class="contdetails">
+        ${item.login}
+        Contributions: ${item.contributions}
+        </div>
+        </div>
+          <div class="contdetails">
+          <a href=https://github.com/${item.login}>${item.login}</a>
+          Contributions: ${item.contributions}
+          </div>
+          </div>
+        `)}
+  </div>`;
   }
 
   /**
@@ -124,4 +162,4 @@ export class ProjectZero extends DDDSuper(I18NMixin(LitElement))
   }
 }
 
-globalThis.customElements.define(ProjectZero.tag, ProjectZero);
+globalThis.customElements.define(GitHubRPGContributors.tag, GitHubRPGContributors);
